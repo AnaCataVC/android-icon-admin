@@ -25,6 +25,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Pre-fetch Gradle Wrapper
+        run: |
+          DIST_DIR="$HOME/.gradle/wrapper/dists/gradle-8.10.2-bin/a04bxjujx95o3nb99gddekhwo"
+          mkdir -p "$DIST_DIR"
+          if [ ! -f "$DIST_DIR/gradle-8.10.2-bin.zip" ] || ! unzip -tq "$DIST_DIR/gradle-8.10.2-bin.zip" 2>/dev/null; then
+            echo "Downloading gradle-8.10.2-bin.zip..."
+            curl -sSL --retry 3 -o "$DIST_DIR/gradle-8.10.2-bin.zip" "https://mirrors.cloud.tencent.com/gradle/gradle-8.10.2-bin.zip"
+            unzip -tq "$DIST_DIR/gradle-8.10.2-bin.zip"
+          fi
+
       - name: Run Core Cleanroom JVM Tests
         run: ./gradlew :core:test --info
 
