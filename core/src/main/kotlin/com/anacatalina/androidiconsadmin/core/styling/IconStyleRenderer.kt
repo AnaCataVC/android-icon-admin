@@ -122,6 +122,9 @@ object IconStyleRenderer {
         val result = RgbaCanvas(background.width, background.height)
 
         for (i in result.pixels.indices step 4) {
+            val ba = (background.pixels[i + 3].toInt() and 0xFF) / 255.0
+            if (ba <= 0.0) continue
+
             val fr = foreground.pixels[i].toInt() and 0xFF
             val fg = foreground.pixels[i + 1].toInt() and 0xFF
             val fb = foreground.pixels[i + 2].toInt() and 0xFF
@@ -130,20 +133,16 @@ object IconStyleRenderer {
             val br = background.pixels[i].toInt() and 0xFF
             val bg = background.pixels[i + 1].toInt() and 0xFF
             val bb = background.pixels[i + 2].toInt() and 0xFF
-            val ba = (background.pixels[i + 3].toInt() and 0xFF) / 255.0
 
-            val outAlpha = fa + ba * (1.0 - fa)
+            val outR = fr * fa + br * (1.0 - fa)
+            val outG = fg * fa + bg * (1.0 - fa)
+            val outB = fb * fa + bb * (1.0 - fa)
+            val outAlpha = (fa + (1.0 - fa)) * ba
 
-            if (outAlpha > 0.0) {
-                val outR = (fr * fa + br * ba * (1.0 - fa)) / outAlpha
-                val outG = (fg * fa + bg * ba * (1.0 - fa)) / outAlpha
-                val outB = (fb * fa + bb * ba * (1.0 - fa)) / outAlpha
-
-                result.pixels[i] = outR.roundToInt().coerceIn(0, 255).toByte()
-                result.pixels[i + 1] = outG.roundToInt().coerceIn(0, 255).toByte()
-                result.pixels[i + 2] = outB.roundToInt().coerceIn(0, 255).toByte()
-                result.pixels[i + 3] = (outAlpha * 255.0).roundToInt().coerceIn(0, 255).toByte()
-            }
+            result.pixels[i] = outR.roundToInt().coerceIn(0, 255).toByte()
+            result.pixels[i + 1] = outG.roundToInt().coerceIn(0, 255).toByte()
+            result.pixels[i + 2] = outB.roundToInt().coerceIn(0, 255).toByte()
+            result.pixels[i + 3] = (outAlpha * 255.0).roundToInt().coerceIn(0, 255).toByte()
         }
 
         return result

@@ -43,23 +43,24 @@ class StyleStore(
 
     fun getAll(): List<IconStyle> {
         val files = stylesDirectory.listFiles { f -> f.extension == "json" }
-        if (files.isNullOrEmpty()) {
-            return IconStyle.getStandardPresets()
+        val standardPresets = IconStyle.getStandardPresets()
+        val stylesMap = LinkedHashMap<String, IconStyle>()
+        for (preset in standardPresets) {
+            stylesMap[preset.id] = preset
         }
 
-        val styles = mutableListOf<IconStyle>()
-        for (f in files) {
-            try {
-                styles.add(IconStyle.fromJson(f.readText()))
-            } catch (_: Exception) {
-                // Ignore corrupted individual files
+        if (!files.isNullOrEmpty()) {
+            for (f in files) {
+                try {
+                    val saved = IconStyle.fromJson(f.readText())
+                    stylesMap[saved.id] = saved
+                } catch (_: Exception) {
+                    // Ignore corrupted individual files
+                }
             }
         }
 
-        if (styles.isEmpty()) {
-            return IconStyle.getStandardPresets()
-        }
-        return styles
+        return stylesMap.values.toList()
     }
 
     fun delete(id: String): Boolean {

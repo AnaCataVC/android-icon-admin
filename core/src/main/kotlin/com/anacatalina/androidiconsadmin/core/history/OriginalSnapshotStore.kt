@@ -10,27 +10,51 @@ class OriginalSnapshotStore(
         snapshotsDirectory.mkdirs()
     }
 
-    fun hasSnapshot(packageName: String): Boolean {
-        return getSnapshotFile(packageName).exists()
+    fun hasSnapshot(packageName: String, mode: String? = null): Boolean {
+        val key = if (mode.isNullOrBlank()) packageName else "${packageName}_$mode"
+        return getSnapshotFile(key).exists() || (mode != null && getSnapshotFile(packageName).exists())
     }
 
-    fun saveSnapshot(packageName: String, canvas: RgbaCanvas) {
-        val file = getSnapshotFile(packageName)
-        if (!file.exists()) {
-            val temp = File(snapshotsDirectory, "$packageName.tmp")
+    fun saveSnapshot(packageName: String, canvas: RgbaCanvas, mode: String? = null) {
+        val key = if (mode.isNullOrBlank()) packageName else "${packageName}_$mode"
+        val file = getSnapshotFile(key)
+        val safeName = key.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        val temp = File(snapshotsDirectory, "$safeName.tmp")
+        try {
             temp.writeBytes(canvas.toPngByteArray())
-            temp.renameTo(file)
+            if (!temp.renameTo(file)) {
+                temp.copyTo(file, overwrite = true)
+                temp.delete()
+            }
+        } finally {
+            if (temp.exists()) temp.delete()
         }
     }
 
-    fun getSnapshot(packageName: String): RgbaCanvas? {
-        val file = getSnapshotFile(packageName)
-        if (!file.exists()) return null
-        return try {
-            RgbaCanvas.fromPngByteArray(file.readBytes())
-        } catch (_: Exception) {
-            null
+    fun getSnapshot(packageName: String, mode: String? = null): RgbaCanvas? {
+        val key = if (mode.isNullOrBlank()) packageName else "${packageName}_$mode"
+        val file = getSnapshotFile(key)
+        if (file.exists()) {
+            val canvas = try {
+                RgbaCanvas.fromPngByteArray(file.readBytes())
+            } catch (_: Exception) {
+                null
+            }
+            if (canvas != null) return canvas
         }
+
+        // Fallback to base snapshot if mode-specific snapshot does not exist yet
+        if (!mode.isNullOrBlank()) {
+            val baseFile = getSnapshotFile(packageName)
+            if (baseFile.exists()) {
+                return try {
+                    RgbaCanvas.fromPngByteArray(baseFile.readBytes())
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+        return null
     }
 
     fun deleteSnapshot(packageName: String): Boolean {

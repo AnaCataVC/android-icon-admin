@@ -93,7 +93,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val items = installed.mapNotNull { app ->
                     try {
                         // 1. Get or extract original snapshot
-                        var originalCanvas = snapshotStore.getSnapshot(app.packageName)
+                        var originalCanvas = snapshotStore.getSnapshot(app.packageName, _activeStyle.value.extractionMode.name)
                         if (originalCanvas == null) {
                             originalCanvas = AdaptiveLayerExtractor.extractIcon(
                                 context,
@@ -102,11 +102,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 targetSize = 256
                             )
                             if (originalCanvas != null) {
+                                snapshotStore.saveSnapshot(app.packageName, originalCanvas, _activeStyle.value.extractionMode.name)
                                 snapshotStore.saveSnapshot(app.packageName, originalCanvas)
                             }
                         }
 
-                        val originalBmp = originalCanvas?.let { BitmapCanvasBridge.toBitmap(it) }
+                        val originalBmp = (originalCanvas ?: snapshotStore.getSnapshot(app.packageName))?.let {
+                            BitmapCanvasBridge.toBitmap(it)
+                        }
 
                         // 2. Render styled preview
                         val styledBmp = originalCanvas?.let {
@@ -134,28 +137,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _activeStyle.value = style
         _settings.value = _settings.value.copy(activeStyleId = style.id)
         settingsService.saveSettings(_settings.value)
-        refreshPreviews()
+        refreshPreviews(style)
     }
 
     fun saveActiveStyle(updatedStyle: IconStyle) {
         styleStore.save(updatedStyle)
         _styles.value = styleStore.getAll()
         _activeStyle.value = updatedStyle
-        refreshPreviews()
+        _settings.value = _settings.value.copy(activeStyleId = updatedStyle.id)
+        settingsService.saveSettings(_settings.value)
+        refreshPreviews(updatedStyle)
     }
 
-    fun refreshPreviews() {
+    fun refreshPreviews(targetStyle: IconStyle? = null) {
         viewModelScope.launch {
             withContext(Dispatchers.Default) {
+                val style = targetStyle ?: _activeStyle.value
                 val current = _apps.value
                 val updated = current.map { item ->
                     try {
-                        val originalCanvas = snapshotStore.getSnapshot(item.info.packageName)
+                        var originalCanvas = snapshotStore.getSnapshot(item.info.packageName, style.extractionMode.name)
+                        if (originalCanvas == null) {
+                            originalCanvas = AdaptiveLayerExtractor.extractIcon(
+                                context,
+                                item.info.packageName,
+                                style.extractionMode,
+                                targetSize = 256
+                            )
+                            if (originalCanvas != null) {
+                                snapshotStore.saveSnapshot(item.info.packageName, originalCanvas, style.extractionMode.name)
+                            } else {
+                                originalCanvas = snapshotStore.getSnapshot(item.info.packageName)
+                            }
+                        }
+
                         val styledBmp = originalCanvas?.let {
-                            val styledCanvas = IconStyleRenderer.render(it, _activeStyle.value, 256)
+                            val styledCanvas = IconStyleRenderer.render(it, style, 256)
                             BitmapCanvasBridge.toBitmap(styledCanvas)
                         }
-                        item.copy(styledBitmap = styledBmp)
+                        item.copy(
+                            styledBitmap = styledBmp,
+                            assignedStyleId = style.id
+                        )
                     } catch (_: Throwable) {
                         item
                     }

@@ -27,6 +27,28 @@ class HistoryTests {
     }
 
     @Test
+    fun `OriginalSnapshotStore supports extraction mode variants and base fallback`(@TempDir tempDir: File) {
+        val store = OriginalSnapshotStore(tempDir)
+        val baseCanvas = RgbaCanvas(8, 8)
+        baseCanvas.setPixel(0, 0, 10, 20, 30, 255)
+        store.saveSnapshot("com.test.app", baseCanvas)
+
+        val monoCanvas = RgbaCanvas(8, 8)
+        monoCanvas.setPixel(0, 0, 200, 200, 200, 255)
+        store.saveSnapshot("com.test.app", monoCanvas, "MONOCHROME_PREFERRED")
+
+        assertTrue(store.hasSnapshot("com.test.app", "MONOCHROME_PREFERRED"))
+        val monoRestored = store.getSnapshot("com.test.app", "MONOCHROME_PREFERRED")
+        assertNotNull(monoRestored)
+        assertEquals(200, monoRestored?.getPixel(0, 0)?.r)
+
+        // Requesting an uncached mode falls back to base snapshot
+        val smartRestored = store.getSnapshot("com.test.app", "SMART_FOREGROUND")
+        assertNotNull(smartRestored)
+        assertEquals(10, smartRestored?.getPixel(0, 0)?.r)
+    }
+
+    @Test
     fun `AppIconUndoStore records and pops batches atomically`(@TempDir tempDir: File) {
         val file = File(tempDir, "undo.json")
         val store = AppIconUndoStore(file)
