@@ -81,40 +81,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             withContext(Dispatchers.IO) {
-                val installed = AppDiscoveryService.getInstalledLaunchableApps(
-                    context,
-                    includeSystemApps = _settings.value.showSystemApps
-                )
-
-                val items = installed.map { app ->
-                    // 1. Get or extract original snapshot
-                    var originalCanvas = snapshotStore.getSnapshot(app.packageName)
-                    if (originalCanvas == null) {
-                        originalCanvas = AdaptiveLayerExtractor.extractIcon(
-                            context,
-                            app.packageName,
-                            _activeStyle.value.extractionMode,
-                            targetSize = 256
-                        )
-                        if (originalCanvas != null) {
-                            snapshotStore.saveSnapshot(app.packageName, originalCanvas)
-                        }
-                    }
-
-                    val originalBmp = originalCanvas?.let { BitmapCanvasBridge.toBitmap(it) }
-
-                    // 2. Render styled preview
-                    val styledBmp = originalCanvas?.let {
-                        val styledCanvas = IconStyleRenderer.render(it, _activeStyle.value, 256)
-                        BitmapCanvasBridge.toBitmap(styledCanvas)
-                    }
-
-                    AppItemUiState(
-                        info = app,
-                        originalBitmap = originalBmp,
-                        styledBitmap = styledBmp,
-                        assignedStyleId = _activeStyle.value.id
+                val installed = try {
+                    AppDiscoveryService.getInstalledLaunchableApps(
+                        context,
+                        includeSystemApps = _settings.value.showSystemApps
                     )
+                } catch (_: Throwable) {
+                    emptyList()
+                }
+
+                val items = installed.mapNotNull { app ->
+                    try {
+                        // 1. Get or extract original snapshot
+                        var originalCanvas = snapshotStore.getSnapshot(app.packageName)
+                        if (originalCanvas == null) {
+                            originalCanvas = AdaptiveLayerExtractor.extractIcon(
+                                context,
+                                app.packageName,
+                                _activeStyle.value.extractionMode,
+                                targetSize = 256
+                            )
+                            if (originalCanvas != null) {
+                                snapshotStore.saveSnapshot(app.packageName, originalCanvas)
+                            }
+                        }
+
+                        val originalBmp = originalCanvas?.let { BitmapCanvasBridge.toBitmap(it) }
+
+                        // 2. Render styled preview
+                        val styledBmp = originalCanvas?.let {
+                            val styledCanvas = IconStyleRenderer.render(it, _activeStyle.value, 256)
+                            BitmapCanvasBridge.toBitmap(styledCanvas)
+                        }
+
+                        AppItemUiState(
+                            info = app,
+                            originalBitmap = originalBmp,
+                            styledBitmap = styledBmp,
+                            assignedStyleId = _activeStyle.value.id
+                        )
+                    } catch (_: Throwable) {
+                        null
+                    }
                 }
                 _apps.value = items
             }
@@ -141,12 +149,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.Default) {
                 val current = _apps.value
                 val updated = current.map { item ->
-                    val originalCanvas = snapshotStore.getSnapshot(item.info.packageName)
-                    val styledBmp = originalCanvas?.let {
-                        val styledCanvas = IconStyleRenderer.render(it, _activeStyle.value, 256)
-                        BitmapCanvasBridge.toBitmap(styledCanvas)
+                    try {
+                        val originalCanvas = snapshotStore.getSnapshot(item.info.packageName)
+                        val styledBmp = originalCanvas?.let {
+                            val styledCanvas = IconStyleRenderer.render(it, _activeStyle.value, 256)
+                            BitmapCanvasBridge.toBitmap(styledCanvas)
+                        }
+                        item.copy(styledBitmap = styledBmp)
+                    } catch (_: Throwable) {
+                        item
                     }
-                    item.copy(styledBitmap = styledBmp)
                 }
                 _apps.value = updated
             }

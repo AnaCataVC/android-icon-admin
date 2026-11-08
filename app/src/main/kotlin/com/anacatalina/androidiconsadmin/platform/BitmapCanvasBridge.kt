@@ -7,7 +7,15 @@ import java.nio.ByteBuffer
 object BitmapCanvasBridge {
     fun toRgbaCanvas(bitmap: Bitmap): RgbaCanvas {
         val safeBitmap = if (bitmap.config != Bitmap.Config.ARGB_8888) {
-            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+            val copied = try { bitmap.copy(Bitmap.Config.ARGB_8888, false) } catch (_: Exception) { null }
+            if (copied != null) {
+                copied
+            } else {
+                val swBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(swBitmap)
+                canvas.drawBitmap(bitmap, 0f, 0f, null)
+                swBitmap
+            }
         } else {
             bitmap
         }

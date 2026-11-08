@@ -38,7 +38,11 @@ object AdaptiveLayerExtractor {
             }
         } ?: return null
 
-        return extractFromDrawable(rawDrawable, mode, targetSize)
+        return try {
+            extractFromDrawable(rawDrawable, mode, targetSize)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun extractFromDrawable(
@@ -81,9 +85,6 @@ object AdaptiveLayerExtractor {
     }
 
     private fun renderDrawableToBitmap(drawable: Drawable, width: Int, height: Int): Bitmap {
-        if (drawable is BitmapDrawable && drawable.bitmap != null) {
-            return Bitmap.createScaledBitmap(drawable.bitmap, width, height, true)
-        }
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, width, height)

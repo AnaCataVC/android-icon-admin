@@ -50,39 +50,43 @@ class SingleIconWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetId: Int
         ) {
-            val packageName = getWidgetPackage(context, appWidgetId) ?: return
+            try {
+                val packageName = getWidgetPackage(context, appWidgetId) ?: return
 
-            val views = RemoteViews(context.packageName, R.layout.widget_single_icon)
+                val views = RemoteViews(context.packageName, R.layout.widget_single_icon)
 
-            // Setup launch intent
-            val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
-            if (launchIntent != null) {
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    appWidgetId,
-                    launchIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_icon_image, pendingIntent)
+                // Setup launch intent
+                val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
+                if (launchIntent != null) {
+                    val pendingIntent = PendingIntent.getActivity(
+                        context,
+                        appWidgetId,
+                        launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_icon_image, pendingIntent)
+                }
+
+                // Render current styled or original icon
+                val settingsService = AppSettingsService(File(context.filesDir, "settings.json"))
+                val settings = settingsService.loadSettings()
+                val styleStore = StyleStore(File(context.filesDir, "styles"))
+                val activeStyle = styleStore.get(settings.activeStyleId) ?: IconStyle.createDefault()
+
+                val snapshotStore = OriginalSnapshotStore(File(context.filesDir, "snapshots"))
+                val originalCanvas = snapshotStore.getSnapshot(packageName)
+                    ?: AdaptiveLayerExtractor.extractIcon(context, packageName, activeStyle.extractionMode)
+
+                if (originalCanvas != null) {
+                    val styledCanvas = IconStyleRenderer.render(originalCanvas, activeStyle, canvasSize = 192)
+                    val styledBitmap = BitmapCanvasBridge.toBitmap(styledCanvas)
+                    views.setImageViewBitmap(R.id.widget_icon_image, styledBitmap)
+                }
+
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (_: Throwable) {
+                // Safeguard against missing drawables or widget update errors
             }
-
-            // Render current styled or original icon
-            val settingsService = AppSettingsService(File(context.filesDir, "settings.json"))
-            val settings = settingsService.loadSettings()
-            val styleStore = StyleStore(File(context.filesDir, "styles"))
-            val activeStyle = styleStore.get(settings.activeStyleId) ?: IconStyle.createDefault()
-
-            val snapshotStore = OriginalSnapshotStore(File(context.filesDir, "snapshots"))
-            val originalCanvas = snapshotStore.getSnapshot(packageName)
-                ?: AdaptiveLayerExtractor.extractIcon(context, packageName, activeStyle.extractionMode)
-
-            if (originalCanvas != null) {
-                val styledCanvas = IconStyleRenderer.render(originalCanvas, activeStyle, canvasSize = 192)
-                val styledBitmap = BitmapCanvasBridge.toBitmap(styledCanvas)
-                views.setImageViewBitmap(R.id.widget_icon_image, styledBitmap)
-            }
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
         fun updateAllWidgets(context: Context) {
