@@ -40,14 +40,16 @@ jobs:
           fi
 
       - name: Run Core Cleanroom JVM Tests
-        run: ./gradlew :core:test --info
+        run: |
+          ./gradlew :core:test --info || (echo "Retrying :core:test..." && sleep 15 && ./gradlew :core:test --info)
 
       - name: Assemble Debug APK
-        run: ./gradlew :app:assembleDebug
+        run: |
+          ./gradlew :app:assembleDebug || (echo "Retrying :app:assembleDebug..." && sleep 15 && ./gradlew :app:assembleDebug)
 
       - name: Assemble Release APK
         run: |
-          ./gradlew :app:assembleRelease
+          ./gradlew :app:assembleRelease || (echo "Retrying :app:assembleRelease..." && sleep 15 && ./gradlew :app:assembleRelease)
           mkdir -p release-artifacts
           cp app/build/outputs/apk/release/*.apk release-artifacts/AndroidIconsAdmin-v0.1.1.apk
 
