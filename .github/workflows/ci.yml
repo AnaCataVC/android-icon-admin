@@ -24,18 +24,16 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.10.2
 
       - name: Run Core Cleanroom JVM Tests
-        run: gradle :core:test --info
+        run: ./gradlew :core:test --info
 
       - name: Assemble Debug APK
-        run: gradle :app:assembleDebug
+        run: ./gradlew :app:assembleDebug
 
       - name: Assemble Release APK
         run: |
-          gradle :app:assembleRelease
+          ./gradlew :app:assembleRelease
           mkdir -p release-artifacts
           cp app/build/outputs/apk/release/*.apk release-artifacts/AndroidIconsAdmin-v0.1.1.apk
 
