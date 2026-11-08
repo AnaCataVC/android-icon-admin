@@ -30,3 +30,15 @@ jobs:
 
       - name: Assemble Debug APK
         run: ./gradlew :app:assembleDebug
+
+      - name: Assemble Release APK
+        run: |
+          ./gradlew :app:assembleRelease
+          mkdir -p release-artifacts
+          cp app/build/outputs/apk/release/*.apk release-artifacts/AndroidIconsAdmin-v0.1.1.apk
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: release-artifacts/AndroidIconsAdmin-v0.1.1.apk
