@@ -24,24 +24,18 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-
-      - name: Pre-fetch Gradle Wrapper
-        run: |
-          DIST_DIR="$HOME/.gradle/wrapper/dists/gradle-8.10.2-bin/a04bxjujx95o3nb99gddekhwo"
-          mkdir -p "$DIST_DIR"
-          if [ ! -f "$DIST_DIR/gradle-8.10.2-bin.zip" ]; then
-            curl -sSL --retry 5 --retry-delay 2 -o "$DIST_DIR/gradle-8.10.2-bin.zip" "https://github.com/gradle/gradle-distributions/releases/download/v8.10.2/gradle-8.10.2-bin.zip" || true
-          fi
+        with:
+          gradle-version: 8.10.2
 
       - name: Run Core Cleanroom JVM Tests
-        run: ./gradlew :core:test --info
+        run: gradle :core:test --info
 
       - name: Assemble Debug APK
-        run: ./gradlew :app:assembleDebug
+        run: gradle :app:assembleDebug
 
       - name: Assemble Release APK
         run: |
-          ./gradlew :app:assembleRelease
+          gradle :app:assembleRelease
           mkdir -p release-artifacts
           cp app/build/outputs/apk/release/*.apk release-artifacts/AndroidIconsAdmin-v0.1.1.apk
 
