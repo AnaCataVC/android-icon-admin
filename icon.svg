@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EDE7F6"/>
+      <stop offset="100%" stop-color="#D1C4E9"/>
+    </linearGradient>
+    <linearGradient id="androidGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3DDC84"/>
+      <stop offset="100%" stop-color="#2BB673"/>
+    </linearGradient>
+    <linearGradient id="accentPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C4DFF"/>
+      <stop offset="100%" stop-color="#651FFF"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#4A148C" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Background Container -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bgGrad)" filter="url(#shadow)" />
+
+  <!-- Inner Android Head & Palette Composite Symbol -->
+  <g transform="translate(136, 128)">
+    <!-- Android Head Dome -->
+    <path d="M 30,140 A 90,90 0 0,1 210,140 Z" fill="url(#androidGreen)"/>
+    <!-- Left Antenna -->
+    <line x1="60" y1="56" x2="42" y2="28" stroke="url(#androidGreen)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Right Antenna -->
+    <line x1="180" y1="56" x2="198" y2="28" stroke="url(#androidGreen)" stroke-width="12" stroke-linecap="round"/>
+    <!-- Left Eye -->
+    <circle cx="85" cy="102" r="10" fill="#FFFFFF"/>
+    <!-- Right Eye -->
+    <circle cx="155" cy="102" r="10" fill="#FFFFFF"/>
+
+    <!-- Dynamic Styling Palette Badge -->
+    <circle cx="170" cy="180" r="54" fill="url(#accentPurple)"/>
+    <circle cx="150" cy="168" r="8" fill="#FF80AB"/>
+    <circle cx="180" cy="160" r="8" fill="#80D8FF"/>
+    <circle cx="192" cy="188" r="8" fill="#B9F6CA"/>
+    <circle cx="160" cy="202" r="8" fill="#FFE57F"/>
+  </g>
+</svg>

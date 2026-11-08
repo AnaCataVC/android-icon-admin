@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AndroidIconsAdmin</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_styles">Estilos</string>
+    <string name="tab_rules">Reglas</string>
+    <string name="tab_delivery">Aplicación y Undo</string>
+</resources>
