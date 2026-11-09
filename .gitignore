@@ -11,3 +11,10 @@ build/
 releases/
 *.apk
 *.aab
+
+# Keystore & Signing Secrets
+*.jks
+*.keystore
+keystore.properties
+*.key
+keystore/

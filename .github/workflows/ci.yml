@@ -47,7 +47,18 @@ jobs:
         run: |
           ./gradlew :app:assembleDebug || (echo "Retrying :app:assembleDebug..." && sleep 15 && ./gradlew :app:assembleDebug)
 
+      - name: Configure Release Keystore
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          mkdir -p keystore
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > keystore/release.keystore
+
       - name: Assemble Release APK
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ github.workspace }}/keystore/release.keystore
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           ./gradlew :app:assembleRelease || (echo "Retrying :app:assembleRelease..." && sleep 15 && ./gradlew :app:assembleRelease)
           mkdir -p release-artifacts

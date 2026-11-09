@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,14 +23,33 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
-            if (keystoreFile.exists()) {
-                storeFile = keystoreFile
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+            val envStoreFile = System.getenv("RELEASE_KEYSTORE_PATH")
+            val keystorePropsFile = rootProject.file("keystore.properties")
+
+            if (!envStoreFile.isNullOrEmpty() && file(envStoreFile).exists()) {
+                storeFile = file(envStoreFile)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            } else if (keystorePropsFile.exists()) {
+                val props = Properties().apply {
+                    keystorePropsFile.inputStream().use { load(it) }
+                }
+                val rawStoreFile = props.getProperty("storeFile") ?: "keystore/release.keystore"
+                storeFile = if (rawStoreFile.startsWith("/")) file(rawStoreFile) else rootProject.file(rawStoreFile.removePrefix("../"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
             } else {
-                initWith(signingConfigs.getByName("debug"))
+                val debugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+                if (debugKeystore.exists()) {
+                    storeFile = debugKeystore
+                    storePassword = "android"
+                    keyAlias = "androiddebugkey"
+                    keyPassword = "android"
+                } else {
+                    initWith(signingConfigs.getByName("debug"))
+                }
             }
         }
     }
