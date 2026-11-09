@@ -24,11 +24,10 @@ This document defines architecture invariants, development workflows, quality ga
   - Does NOT build releases or touch keystores.
 - **Release Workflow (`.github/workflows/release.yml`):**
   - Triggers strictly on tag push (`git push origin v*`).
-  - Decodes `secrets.RELEASE_KEYSTORE_BASE64`, signs with production credentials, builds `:app:assembleRelease`, computes the cryptographic `.sha256` hash, and publishes the release on GitHub.
+  - Decodes `secrets.RELEASE_KEYSTORE_BASE64`, signs with production credentials, builds `:app:assembleRelease`, and publishes the release on GitHub (GitHub natively computes and displays the SHA-256 digest on the web UI).
   - Cleans up keystores immediately upon completion (`if: always()`).
-- **Official Deliverables:**
+- **Official Deliverable:**
   - `AndroidIconsAdmin-vX.Y.Z.apk`
-  - `AndroidIconsAdmin-vX.Y.Z.apk.sha256`
 
 ---
 

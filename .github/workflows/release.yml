@@ -54,7 +54,7 @@ jobs:
         if: always()
         run: rm -rf keystore/
 
-      - name: Package Release Assets & Checksum
+      - name: Package Release Asset
         run: |
           TAG_NAME="${{ github.ref_name }}"
           APK_SRC=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
@@ -66,17 +66,12 @@ jobs:
           
           APK_DEST="AndroidIconsAdmin-${TAG_NAME}.apk"
           cp "$APK_SRC" "$APK_DEST"
-          sha256sum "$APK_DEST" > "${APK_DEST}.sha256"
-          
           echo "ASSET_APK=$APK_DEST" >> $GITHUB_ENV
-          echo "ASSET_SHA=${APK_DEST}.sha256" >> $GITHUB_ENV
 
-      - name: Upload Release Assets to GitHub Release
+      - name: Upload Release Asset to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ env.ASSET_APK }}
-            ${{ env.ASSET_SHA }}
+          files: ${{ env.ASSET_APK }}
           draft: false
           prerelease: false
           generate_release_notes: true
